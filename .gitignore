@@ -1,6 +1,5 @@
 .venv/
 DS_Store
-env.json
 ec2webapp/node_modules/
 ec2webapp/public/build/
 private_key.pem

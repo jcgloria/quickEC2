@@ -39,14 +39,14 @@ class QuickEC2:
     
     def terminate_instance(self, instanceId, instanceName):
         try:
+            # terminate instance
             print("terminating instance: " + instanceId)
             self.ec2.terminate_instances(InstanceIds=[instanceId])
-            # wait for instance to terminate
             waiter = self.ec2.get_waiter('instance_terminated')
+            print("waiting for instance to terminate...")
             waiter.wait(InstanceIds=[instanceId])
-            #delete security group
+            # delete security group
             sg_name = instanceName+'-sg'
-            #get security group id
             sg_id = self.ec2.describe_security_groups(Filters=[{'Name': 'group-name', 'Values': [sg_name]}])['SecurityGroups'][0]['GroupId']
             print("removing security group: " + sg_name)
             self.ec2.delete_security_group(GroupId=sg_id)
