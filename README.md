@@ -1,6 +1,8 @@
 # QuickEC2
 ### A simple Flask application to quickly launch EC2 instances with minimal configuration.
 #### - _*Development in progress*_
+<img width="1433" alt="image" src="https://user-images.githubusercontent.com/30906750/224453101-9d4c3b47-a6a9-4e12-ad55-2cbd485c8718.png">
+
 ## Installation
 1. Back-end
 - Open a new terminal
