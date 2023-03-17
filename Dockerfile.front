@@ -1,0 +1,11 @@
+FROM httpd:2.4-alpine
+
+COPY ./ec2webapp/ /app
+WORKDIR /app
+
+RUN apk add --no-cache nodejs
+RUN apk add --no-cache npm
+
+RUN npm install
+RUN npm run build
+RUN cp -r ./public/* /usr/local/apache2/htdocs/

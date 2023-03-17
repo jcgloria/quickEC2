@@ -1,0 +1,16 @@
+FROM alpine:latest
+
+ENV KEYSTORE_PATH=/Users/jcgloria/Documents/warp
+
+COPY ./flask/ /app
+WORKDIR /app
+
+RUN apk add libffi-dev
+RUN apk add python3
+RUN apk add gcc libc-dev libffi-dev python3-dev
+RUN python3 -m ensurepip
+RUN pip3 install -r ./requirements.txt
+
+CMD ["/usr/bin/gunicorn", "app:app", "-b", ":5000"]
+
+

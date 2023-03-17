@@ -1,7 +1,7 @@
-.venv/
+flask/.venv/
 DS_Store
 ec2webapp/node_modules/
 ec2webapp/public/build/
-private_key.pem
-public_key.pem
-credentials.json
+flask/private_key.pem
+flask/public_key.pem
+flask/credentials.json

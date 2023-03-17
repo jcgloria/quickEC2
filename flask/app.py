@@ -3,7 +3,6 @@ from flask_cors import CORS
 import utils
 import json
 import threading
-import os 
 
 app = Flask(__name__)
 
@@ -42,7 +41,7 @@ def instances():
     
 @app.route('/api/key_path', methods=['GET'])
 def get_key_path():
-    return json.dumps({'status':'success', 'message':os.path.join(os.path.dirname(os.path.realpath(__file__)), 'private_key.pem')})
+    return json.dumps({'status':'success', 'message': quickEC2.get_key_path()})
 
 def launchTask(data):
     response = quickEC2.launch(data['instanceName'], data['publicIp'], data['linuxType'], data['inboundRules'])
@@ -77,7 +76,3 @@ def stream():
 def emit_message(message):
     global message_stream
     message_stream.append(message)
-
-
-
-

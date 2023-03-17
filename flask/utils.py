@@ -1,6 +1,7 @@
 import boto3
 import paramiko
 import requests
+import os
 
 class QuickEC2:
     AMAZON_AMI = 'ami-09ee0944866c73f62'
@@ -190,18 +191,29 @@ class QuickEC2:
             return {'status': 'success', 'message': 'Instance with instance ID: ' + iID + ' is being launched'}
         except Exception as e:
             return {'status': 'error', 'message': e}
-            
+
+    def get_key_path(self):
+        if 'KEYSTORE_PATH' in os.environ:
+            path = os.environ['KEYSTORE_PATH']
+            if path[-1] != '/':
+                path += '/'
+        else:
+            path = os.path.dirname(os.path.realpath(__file__)) + '/'
+        return path + 'private_key.pem'
+        
     def gen_ssh_pair(self):
-        # Check if keypair exists
+        print('Checking if SSH keypair exists...')
         keypair = self.ec2.describe_key_pairs()
         for keypair in keypair['KeyPairs']:
             if keypair['KeyName'] == 'QuickEC2':
                 return {'status': 'error', 'message': 'Keypair already exists'}
         print('Generating SSH keypair...')
         key = paramiko.RSAKey.generate(2048)
-        key.write_private_key_file('private_key.pem')
-        with open('public_key.pem', 'w') as public_key_file:
+        path = '/keystore/' if 'KEYSTORE_PATH' in os.environ else os.path.dirname(os.path.realpath(__file__)) + '/'
+        key.write_private_key_file(path + 'private_key.pem')
+        with open(path + 'public_key.pem', 'w') as public_key_file:
             public_key_file.write(f'{key.get_name()} {key.get_base64()}')
         print('SSH keypair generated')
-        self.ec2.import_key_pair(KeyName='QuickEC2', PublicKeyMaterial=open('public_key.pem', 'rb').read(), TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}], 'ResourceType': 'key-pair'}])
+        self.ec2.import_key_pair(KeyName='QuickEC2', PublicKeyMaterial=open(path + 'public_key.pem', 'rb').read(), TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}], 'ResourceType': 'key-pair'}])
         return {'status': 'success', 'message': 'Keypair imported successfully'}
+    
