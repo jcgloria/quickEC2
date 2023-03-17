@@ -6,7 +6,7 @@
 
 #### Docker
 1. Setup 
-- Mofiy `ENV KEYSTORE_PATH=<your_local_path>` in `Dockerfile.back` to a directory in your local computer. SSH keys will be stored in this directory.
+- Modfiy `KEYSTORE_PATH=<your_local_path>` in `Dockerfile.back` to a directory in your local computer. SSH keys will be stored in this directory.
 - Add AWS credentials to `flask/credentials.json`:
 ```json
 {
