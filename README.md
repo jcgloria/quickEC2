@@ -19,6 +19,7 @@
 2. Front-End
 - Open a new terminal
 - `cd ec2webapp`
+- `npm run install`
 - `npm run build`
 - `npm run start`
 

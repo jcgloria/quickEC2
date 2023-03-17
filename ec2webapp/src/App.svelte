@@ -89,12 +89,7 @@
       notification.update((n) => (n = {"status": "error", "message": "An unknown error occurred"}));
     }
   }
-  /*
-  * TODO: Handle inbound rules
-  */
-  function handleInboundRules(instance) {
-    console.log("inbound rules");
-  }
+
   /*
   * Refresh button handler. Also clears the notification store
   */
@@ -205,12 +200,6 @@ handleRefresh(); // initial instance fetch
                     <button
                       on:click={handleTerminate(instance)}
                       class="dropdown-item">Terminate</button
-                    >
-                  </li>
-                  <li>
-                    <button
-                      on:click={handleInboundRules(instance)}
-                      class="dropdown-item">Inbound Rules</button
                     >
                   </li>
                 </ul>
