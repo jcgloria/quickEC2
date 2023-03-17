@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-ENV KEYSTORE_PATH=/Users/jcgloria/Documents/warp
+ENV KEYSTORE_PATH=<your_local_path>
 
 COPY ./flask/ /app
 WORKDIR /app
