@@ -6,7 +6,10 @@
 
 #### Docker
 1. Setup 
-- Modify `KEYSTORE_PATH=<your_local_path>` in `Dockerfile.back` to a directory in your local computer. SSH keys will be stored in this directory.
+- Modify `KEYSTORE_PATH=<your_local_path>` in `Dockerfile.back` to a directory in your local computer. SSH keys will be stored in this directory. Example: 
+```bash
+KEYSTORE_PATH=/Users/jsmith/keystore/
+```
 - Add AWS credentials to `flask/credentials.json`:
 ```json
 {
