@@ -6,13 +6,14 @@ import os
 class QuickEC2:
     AMAZON_AMI = 'ami-09ee0944866c73f62'
     UBUNTU_AMI = 'ami-0aaa5410833273cfe'
-    VPC_CIDR = '10.0.0.0/16'
     def __init__(self, access_key, secret_key, region='us-east-1'):
         self.access_key = access_key
         self.secret_key = secret_key
         self.region = region
         self.ec2 = boto3.client('ec2', aws_access_key_id=self.access_key, aws_secret_access_key=self.secret_key, region_name=self.region)
+        self.cf = boto3.client('cloudformation', aws_access_key_id=self.access_key, aws_secret_access_key=self.secret_key, region_name=self.region)
         self.ownIp = requests.get('https://api.ipify.org').text + '/32'
+        
 
     def get_instances(self,mock=False):
         if mock:
@@ -79,25 +80,11 @@ class QuickEC2:
         try: 
             #Create VPC
             print('Creating VPC...')
-            vpc = self.ec2.create_vpc(CidrBlock='10.0.0.0/16', TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}], 'ResourceType': 'vpc'}])
-            vpc_id = vpc['Vpc']['VpcId']
-            self.ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsSupport={'Value': True})
-            self.ec2.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={'Value': True})
+            stackname = 'QuickEC2'
+            self.cf.create_stack( StackName=stackname,TemplateBody=open('vpc.yaml', 'r').read())
+            print('Waiting for VPC creation to complete...')
+            self.cf.get_waiter('stack_create_complete').wait(StackName=stackname)
             print('VPC created successfully')
-            ig = self.ec2.create_internet_gateway()
-            ig_id = ig['InternetGateway']['InternetGatewayId']
-            self.ec2.attach_internet_gateway(InternetGatewayId=ig_id, VpcId=vpc_id)
-            print('Internet Gateway created and attached successfully')
-            public_subnet_id = self.ec2.create_subnet(CidrBlock='10.0.0.0/20', VpcId=vpc_id, TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}, {'Key': 'SubnetExposure', 'Value': 'Public'}], 'ResourceType': 'subnet'}])['Subnet']['SubnetId']
-            self.ec2.modify_subnet_attribute(SubnetId=public_subnet_id, MapPublicIpOnLaunch={'Value': True})
-            public_route_id = self.ec2.create_route_table(VpcId=vpc_id, TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}], 'ResourceType': 'route-table'}])['RouteTable']['RouteTableId']
-            self.ec2.create_route(RouteTableId=public_route_id, DestinationCidrBlock='0.0.0.0/0', GatewayId=ig_id)
-            self.ec2.associate_route_table(RouteTableId=public_route_id, SubnetId=public_subnet_id)
-            print('Public Subnet and Route Table created successfully')
-            private_subnet_id = self.ec2.create_subnet(CidrBlock='10.0.128.0/20', VpcId=vpc_id, TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}, {'Key': 'SubnetExposure', 'Value': 'Private'}], 'ResourceType': 'subnet'}])['Subnet']['SubnetId']
-            private_route_id = self.ec2.create_route_table(VpcId=vpc_id, TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}], 'ResourceType': 'route-table'}])['RouteTable']['RouteTableId']
-            self.ec2.associate_route_table(RouteTableId=private_route_id, SubnetId=private_subnet_id)
-            print('Private Subnet and Route Table created successfully')
             return {'status': 'success', 'message': 'VPC created successfully'}
         except Exception as e:
             return {'status': 'error', 'message': e}
@@ -115,33 +102,16 @@ class QuickEC2:
         vpc_id = self.check_VPC()
         if vpc_id:
             try:
-                # Delete internet gateway
-                ig = self.ec2.describe_internet_gateways(Filters=[{'Name': 'attachment.vpc-id', 'Values': [vpc_id]}])
-                if ig['InternetGateways']:
-                    ig_id = ig['InternetGateways'][0]['InternetGatewayId']
-                    print("Deleting Internet Gateway", ig_id)
-                    self.ec2.detach_internet_gateway(InternetGatewayId=ig_id, VpcId=vpc_id)
-                    self.ec2.delete_internet_gateway(InternetGatewayId=ig_id)
-                # Delete subnets
-                subnets = self.ec2.describe_subnets(Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]}])['Subnets']
-                for subnet in subnets:
-                    print("Deleting Subnet", subnet['SubnetId'])
-                    self.ec2.delete_subnet(SubnetId=subnet['SubnetId'])
-                # Delete route tables
-                route_tables = self.ec2.describe_route_tables(Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]}])['RouteTables']
-                for route_table in route_tables:
-                    if not route_table['Associations']:
-                        print("Deleting Route Table", route_table['RouteTableId'])
-                        self.ec2.delete_route_table(RouteTableId=route_table['RouteTableId'])
-                # Delete security groups
-                sgs = self.ec2.describe_security_groups(Filters=[{'Name': 'vpc-id', 'Values': [vpc_id]}])['SecurityGroups']
-                for sg in sgs:
-                    if sg['GroupName'] != 'default':
-                        print("Deleting Security Group", sg['GroupId'])
-                        self.ec2.delete_security_group(GroupId=sg['GroupId'])
-                # Delete VPC
-                print("Deleting VPC", vpc_id)
-                self.ec2.delete_vpc(VpcId=vpc_id)
+                #Delete VPC
+                print('Deleting VPC...')
+                stackname = 'QuickEC2'
+                self.cf.delete_stack(StackName=stackname)
+                print('Waiting for VPC deletion to complete...')
+                self.cf.get_waiter('stack_delete_complete').wait(StackName=stackname)
+                print('VPC deleted successfully')
+                # Delete key pair
+                print('Deleting key pair...')
+                print('Key pair deleted successfully')
                 return {'status': 'success', 'message': 'VPC deleted successfully'}
             except Exception as e:
                 return {'status': 'error', 'message': e}
@@ -153,7 +123,7 @@ class QuickEC2:
         try:
             self.gen_ssh_pair() #gen ssh pair if it doesn't exist
             if not self.check_VPC():
-                self.create_VPC() #create VPC if it doesn't exist
+                return {'status': 'error', 'message': 'VPC does not exist'}
             #Check if there are no other instances with the same name
             instances = self.ec2.describe_instances(Filters=[{'Name': 'tag:Name', 'Values': [name]}])
             if instances['Reservations']:
@@ -216,4 +186,3 @@ class QuickEC2:
         print('SSH keypair generated')
         self.ec2.import_key_pair(KeyName='QuickEC2', PublicKeyMaterial=open(path + 'public_key.pem', 'rb').read(), TagSpecifications=[{'Tags': [{'Key': 'Name', 'Value': 'QuickEC2'}], 'ResourceType': 'key-pair'}])
         return {'status': 'success', 'message': 'Keypair imported successfully'}
-    

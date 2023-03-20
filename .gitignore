@@ -1,7 +1,8 @@
-flask/.venv/
 DS_Store
 ec2webapp/node_modules/
 ec2webapp/public/build/
 flask/private_key.pem
 flask/public_key.pem
 flask/credentials.json
+flask/__pycache__/
+flask/.venv/

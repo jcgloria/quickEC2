@@ -15,14 +15,13 @@ quickEC2 = utils.QuickEC2(access_key=env['access_key'], secret_key=env['secret_k
 
 @app.route('/api/instances', methods=['GET','POST', 'DELETE', 'PUT'])
 def instances():
-    print(request.method)
     if request.method == 'GET':
         return json.dumps(quickEC2.get_instances()) 
     if request.method == 'DELETE':
         data = request.get_json()
         task = threading.Thread(target=terminateTask, args=(data['instanceId'],data['instanceName']))
         task.start()
-        return json.dumps({'status': 'process', 'message': 'Instance termination task received'})
+        return json.dumps({'status': 'process', 'message': 'Terminating instance ' + data['instanceName'] + '...'})
     if request.method == 'PUT':
         data = request.get_json()
         if data['action'] == 'stop':
@@ -46,7 +45,18 @@ def get_key_path():
 def launchTask(data):
     response = quickEC2.launch(data['instanceName'], data['publicIp'], data['linuxType'], data['inboundRules'])
     print(response)
+    if response['message'] == 'VPC does not exist':
+        response = createVPCTask()
+        if response['status'] == 'success':
+            emit_message(json.dumps({'status': 'process', 'message': 'VPC created successfully. Launching instance...'}))
+            response = quickEC2.launch(data['instanceName'], data['publicIp'], data['linuxType'], data['inboundRules'])
+            print(response)
     emit_message(json.dumps(response))
+
+def createVPCTask():
+    emit_message(json.dumps({'status': 'process', 'message': 'VPC is being created...'}))
+    response = quickEC2.create_VPC()
+    return response
 
 def terminateTask(instanceId, instanceName):
     response = quickEC2.terminate_instance(instanceId, instanceName)
