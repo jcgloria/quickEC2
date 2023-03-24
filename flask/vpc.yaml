@@ -27,6 +27,7 @@ Resources:
     Properties:
       CidrBlock: '10.0.0.0/20'
       VpcId: !Ref MainVPC
+      MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
           Value: QuickEC2
